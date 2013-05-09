@@ -1,5 +1,8 @@
 #include "format_twobit.h"
 
+// Fixme: Here for debugging
+#define MAX_ALLOC 524288
+
 int FormatTwoBit::info(FILE *fp) {
 	char buf[256];
 
