@@ -1,4 +1,5 @@
 CPP:=g++
+CF:=-Wall
 
 SRCS:=\
 	main.cpp \
@@ -10,10 +11,10 @@ OBJS:=$(SRCS:.cpp=.o)
 default: ggt
 
 ggt: $(OBJS)
-	$(CPP) -o $@ $+
+	$(CPP) $(CF) -o $@ $+
 
 .cpp.o:
-	$(CPP) -c -o $@ $<
+	$(CPP) $(CF) -c -o $@ $<
 
 clean:
 	rm -f *~ */*~ */*.o ggt
