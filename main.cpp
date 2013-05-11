@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "formats/format_twobit.h"
+
 typedef enum {
 	FILE_FORMAT_UNKNOWN,
 	FILE_FORMAT_2BIT,
@@ -10,8 +12,9 @@ typedef enum {
 
 
 file_format_t determineFileFormat(FILE *fp) {
-	char buf[256];
-	int n = fread(buf,1,sizeof(buf),fp);
+	char buf[32];
+	memset(buf,0,sizeof(buf));
+	fread(buf,1,sizeof(buf),fp);
 
 	if (
 		(*(uint32_t*)buf == 0x1a412743) ||
@@ -27,7 +30,7 @@ int usage(void) {
 		"Usage:\n"
 		"	ggt <command> [<args>]\n"
 		"Commands:\n"
-		"	info   Information about a file\n"
+		"	info   Information about a file (2bit)\n"
 		"\n"
 		"See 'ggt help <command>' for more information about a specific command.\n"
 	);
@@ -40,21 +43,39 @@ int cmdHelp(int argc, char **argv) {
 	return 0;
 }
 
-int cmdInfo(int argc, char **argv) {
-	return 0;
-}
-
 class Input {
 private:
-	void _init() { filename = NULL; fd = NULL; seq = -1; }
+	void _init() { filename = NULL; fp = NULL; seq = -1; }
 public:
 	Input() { _init(); }
 
 	const char *cmd;
 	const char *filename;
-	FILE *fd;
+	FILE *fp;
 	int seq;
 } input;
+
+int cmdInfo(int argc, char **argv) {
+	for (unsigned i = 2; i < argc; i++) {
+		if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
+			if (i + 1 >= argc) return usage();
+			input.seq = atol(argv[++i]);
+			continue;
+		}
+		input.filename = argv[i];
+		if (++i != argc)
+			return usage();
+	}
+	input.fp = fopen(input.filename, "r");
+	if (!input.fp) {
+		printf("Error, unable to open '%s'\n", input.filename);
+		return -1;
+	}
+	FormatTwoBit::info(input.fp);
+	fclose(input.fp);
+	
+	return 0;
+}
 
 struct sCommands {
 	const char *cmd;
@@ -77,23 +98,4 @@ int main(int argc, char **argv) {
 	}
 
 	return usage();
-	//for (unsigned i = 1; i < argc; i++) {
-	//	if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
-	//		if (i + 1 >= argc) return usage();
-	//		input.seq = atol(argv[++i]);
-	//		continue;
-	//	}
-	//	input.filename = argv[i];
-	//	if (++i != argc)
-	//		return usage();
-	//}
-	//input.fd = fopen(input.filename, "r");
-	//if (!input.fd) {
-	//	printf("Error, unable to open '%s'\n", input.filename);
-	//	return -1;
-	//}
-	// file_2bit_info(input.fd);
-	//fclose(input.fd);
-	//
-	//return 0;
 }
