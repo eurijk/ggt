@@ -40,5 +40,5 @@ public:
 	int load();
 
 
-	static int info(FILE *fp);
+	static int info(FILE *fp, int verbose);
 };

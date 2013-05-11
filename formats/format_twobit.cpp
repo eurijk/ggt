@@ -3,7 +3,7 @@
 // Fixme: Here for debugging
 #define MAX_ALLOC 524288
 
-int FormatTwoBit::info(FILE *fp) {
+int FormatTwoBit::info(FILE *fp, int verbose) {
 	char buf[256];
 
 	// Fixme: Read header size only
@@ -19,16 +19,21 @@ int FormatTwoBit::info(FILE *fp) {
 		return -1;
 	}
 
-	printf("File format: 2bit\n");
 
 	// Determine endian format.
 	int endian_is_native = (*(uint32_t*)buf == 0x1a412743) ? 1 : 0;
 	// Fixme, we care about big/little not native or swapped
 	// Use htonl
-	printf("Endian:         %s\n", endian_is_native ? "native" : "swapped");
-	printf("Version:        %d\n", header->version); // Fixme, endians
-	printf("Sequence Count: %d\n", header->sequenceCount); // Fixme, endians
-	printf("Reserved:       %d\n", header->reserved); // Fixme, endians
+
+	if (verbose >= 1) {
+		printf("File format:    2bit\n");
+		printf("Endian:         %s\n", endian_is_native ? "native" : "swapped");
+		printf("Version:        %d\n", header->version); // Fixme, endians
+		printf("Sequence Count: %d\n", header->sequenceCount); // Fixme, endians
+		printf("Reserved:       %d\n", header->reserved); // Fixme, endians
+		if (verbose == 1)
+			return 0;
+	}
 
 	_2bit_index_t *index = (_2bit_index_t*)malloc(sizeof(_2bit_index_t)*header->sequenceCount);
 	if (!index) {
@@ -75,12 +80,14 @@ int FormatTwoBit::info(FILE *fp) {
 			index[i].nBlockSizes = 0;
 		}
 		n = fread(&index[i].maskBlockCount,sizeof(uint32_t),1,fp);
-		printf(
-			"Seq #%d:\"%s\", DNA Size %d (%dkb), block count %d, mask %d\n",
-			i, index[i].seq_hdr.name,
-			index[i].dnaSize, index[i].dnaSize/4096,
-			index[i].nBlockCount, index[i].maskBlockCount
-		);
+		if (verbose >= 2) {
+			printf(
+				"Seq #%d:\"%s\", DNA Size %d (%dkb), block count %d, mask %d\n",
+				i, index[i].seq_hdr.name,
+				index[i].dnaSize, index[i].dnaSize/4096,
+				index[i].nBlockCount, index[i].maskBlockCount
+			);
+		}
 		if (!index[i].maskBlockCount) {
 			index[i].maskBlockStarts = NULL;
 			index[i].maskBlockSizes = NULL;
@@ -92,13 +99,13 @@ int FormatTwoBit::info(FILE *fp) {
 			index[i].maskBlockSizes  = (uint32_t*)malloc(sizeof(uint32_t)*index[i].maskBlockCount);
 
 			n = fread(index[i].maskBlockStarts, sizeof(uint32_t), index[i].maskBlockCount, fp);
-			if (n != index[i].maskBlockCount) {
+			if ((unsigned)n != index[i].maskBlockCount) {
 				printf("Error: Unable to read mask block starts at index %d, short file?\n", i);
 				return -1;
 			}
 
 			n = fread(index[i].maskBlockSizes,  sizeof(uint32_t), index[i].maskBlockCount, fp);
-			if (n != index[i].maskBlockCount) {
+			if ((unsigned)n != index[i].maskBlockCount) {
 				printf("Error: Unable to read mask block count at index %d, short file?\n", i);
 				return -1;
 			}

@@ -5,6 +5,21 @@
 
 #include "formats/format_twobit.h"
 
+int cmdHelp(int argc, char **argv);
+int cmdInfo(int argc, char **argv);
+int helpHelp();
+int helpInfo();
+
+struct sCommands {
+	const char *cmd;
+	int (*fnCmd)(int argc, char **argv);
+	int (*fnHelp)();
+} commands[] = {
+	{ "help", cmdHelp, helpHelp },
+	{ "info", cmdInfo, helpInfo }
+};
+
+
 typedef enum {
 	FILE_FORMAT_UNKNOWN,
 	FILE_FORMAT_2BIT,
@@ -25,7 +40,7 @@ file_format_t determineFileFormat(FILE *fp) {
 	return FILE_FORMAT_UNKNOWN;
 }
 
-int usage(void) {
+int usage() {
 	printf(
 		"Usage:\n"
 		"	ggt <command> [<args>]\n"
@@ -39,7 +54,19 @@ int usage(void) {
 	return -1;
 }
 
+int helpHelp() {
+	return usage();
+}
 int cmdHelp(int argc, char **argv) {
+	if (argc <= 2)
+		return usage();
+
+	const char *cmd = argv[2];
+
+	for (unsigned i = 0; i < sizeof(commands)/sizeof(struct sCommands); i++) {
+		if (!strcasecmp(cmd, commands[i].cmd))
+			return (*commands[i].fnHelp)();
+	}
 	return 0;
 }
 
@@ -55,8 +82,24 @@ public:
 	int seq;
 } input;
 
+int helpInfo() {
+	printf(
+		"NAME\n"
+		"	git info - Information about a file\n"
+		"SYNOPSIS\n"
+		"	ggt info [-v | -vv | -v(n) ] <filename>\n"
+		"OPTIONS\n"
+		"	-v, -v1, -v2, -v(n), -vv, -vvv\n"
+		"		Increase the level of information returned about\n"
+		"		a file. -v9 is maximum verbosity, although most formats\n"
+		"		will have no further details around -v3.\n"
+		"		-v is the same as -v2, the default is -v1\n"
+	);
+	return 0;
+}
+
 int cmdInfo(int argc, char **argv) {
-	for (unsigned i = 2; i < argc; i++) {
+	for (int i = 2; i < argc; i++) {
 		if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
 			if (i + 1 >= argc) return usage();
 			input.seq = atol(argv[++i]);
@@ -71,19 +114,11 @@ int cmdInfo(int argc, char **argv) {
 		printf("Error, unable to open '%s'\n", input.filename);
 		return -1;
 	}
-	FormatTwoBit::info(input.fp);
+	FormatTwoBit::info(input.fp, 1);
 	fclose(input.fp);
 	
 	return 0;
 }
-
-struct sCommands {
-	const char *cmd;
-	int (*fn)(int argc, char **argv);
-} commands[] = {
-	{ "help", cmdHelp },
-	{ "info", cmdInfo }
-};
 
 int main(int argc, char **argv) {
 	if (argc <= 1)
@@ -94,7 +129,7 @@ int main(int argc, char **argv) {
 
 	for (unsigned i = 0; i < sizeof(commands)/sizeof(struct sCommands); i++) {
 		if (!strcasecmp(cmd, commands[i].cmd))
-			return (*commands[i].fn)(argc, argv);
+			return (*commands[i].fnCmd)(argc, argv);
 	}
 
 	return usage();
