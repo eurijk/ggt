@@ -72,7 +72,7 @@ int cmdHelp(int argc, char **argv) {
 
 class Input {
 private:
-	void _init() { filename = NULL; fp = NULL; seq = -1; }
+	void _init() { filename = NULL; fp = NULL; seq = -1; verbose = 1; }
 public:
 	Input() { _init(); }
 
@@ -80,6 +80,7 @@ public:
 	const char *filename;
 	FILE *fp;
 	int seq;
+	int verbose;
 } input;
 
 int helpInfo() {
@@ -100,6 +101,19 @@ int helpInfo() {
 
 int cmdInfo(int argc, char **argv) {
 	for (int i = 2; i < argc; i++) {
+		if (!strcmp(argv[i], "-v"))   { input.verbose = 2; continue; }
+		if (!strcmp(argv[i], "-vv"))  { input.verbose = 3; continue; }
+		if (!strcmp(argv[i], "-vvv")) { input.verbose = 4; continue; }
+		if (!strcmp(argv[i], "-v0"))  { input.verbose = 0; continue; }
+		if (!strcmp(argv[i], "-v1"))  { input.verbose = 1; continue; }
+		if (!strcmp(argv[i], "-v2"))  { input.verbose = 2; continue; }
+		if (!strcmp(argv[i], "-v3"))  { input.verbose = 3; continue; }
+		if (!strcmp(argv[i], "-v4"))  { input.verbose = 4; continue; }
+		if (!strcmp(argv[i], "-v5"))  { input.verbose = 5; continue; }
+		if (!strcmp(argv[i], "-v6"))  { input.verbose = 6; continue; }
+		if (!strcmp(argv[i], "-v7"))  { input.verbose = 7; continue; }
+		if (!strcmp(argv[i], "-v8"))  { input.verbose = 8; continue; }
+		if (!strcmp(argv[i], "-v9"))  { input.verbose = 9; continue; }
 		if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
 			if (i + 1 >= argc) return usage();
 			input.seq = atol(argv[++i]);
@@ -114,7 +128,7 @@ int cmdInfo(int argc, char **argv) {
 		printf("Error, unable to open '%s'\n", input.filename);
 		return -1;
 	}
-	FormatTwoBit::info(input.fp, 1);
+	FormatTwoBit::info(input.fp, input.verbose);
 	fclose(input.fp);
 	
 	return 0;
