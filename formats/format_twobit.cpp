@@ -109,6 +109,14 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 				printf("Error: Unable to read mask block count at index %d, short file?\n", i);
 				return -1;
 			}
+
+			if (verbose >= 3) {
+				for (unsigned o = 0; o < index[i].maskBlockCount; o++) {
+					printf("   Mask #%d: start: %d, size: %d\n",
+						o, index[i].maskBlockStarts[o], index[i].maskBlockSizes[o]
+					);
+				}
+			}
 		}
 
 		// Reserved
