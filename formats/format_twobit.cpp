@@ -82,10 +82,11 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 		n = fread(&index[i].maskBlockCount,sizeof(uint32_t),1,fp);
 		if (verbose >= 2) {
 			printf(
-				"Seq #%d:\"%s\", DNA Size %d (%dkb), block count %d, mask %d\n",
-				i, index[i].seq_hdr.name,
-				index[i].dnaSize, index[i].dnaSize/4096,
-				index[i].nBlockCount, index[i].maskBlockCount
+				"Seq #%3d: %6d kbase, block count %3d, mask %6d, \"%s\" \n",
+				i,
+				index[i].dnaSize / 1000,
+				index[i].nBlockCount, index[i].maskBlockCount,
+				index[i].seq_hdr.name
 			);
 		}
 		if (!index[i].maskBlockCount) {
