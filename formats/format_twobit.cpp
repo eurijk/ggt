@@ -125,7 +125,34 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 		
 		/** Fixme: In some cases, we probably actually want to load this data. */
 		index[i].packedDna_offset = ftell(fp);
-		fseek(fp,(index[i].dnaSize+3)/4,SEEK_CUR);
+		if (verbose < 9)
+			fseek(fp,(index[i].dnaSize+3)/4,SEEK_CUR);
+		else {
+			#if 0 // Work in progress
+			char buf[8192];
+			int bpc = index[i].dnaSize;
+			int len = (index[i].dnaSize+3)/4;
+			while (len > 0) {
+				int toread = len > sizeof(buf) ? sizeof(buf) : len;
+				printf("ToRead :%d\n", toread);
+				n = fread(&buf[0], 1, toread, fp);
+				if (toread != n) {
+					printf("Error: Unable to read DNA data\n");
+					return -1;
+				}
+				for (unsigned i = 0; i < toread; i++) {
+					const char c[4] = { 'T', 'C', 'A', 'G' }; // 'G', 'A', 'C', 'T' };
+					printf("%c%c%c%c",
+						c[(buf[i] >> 6) & 3],
+						c[(buf[i] >> 4) & 3],
+						c[(buf[i] >> 2) & 3],
+						c[(buf[i] >> 0) & 3]
+					);
+				}
+				len -= n;
+			}
+			#endif
+		}
 	}
 
 	// EOF Sanity Check
