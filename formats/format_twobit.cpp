@@ -3,7 +3,25 @@
 // Fixme: Here for debugging
 #define MAX_ALLOC 524288
 
+enum {
+	ACTION_DUMP,
+	ACTION_INFO,
+	ACTION_SHOW
+};
+
+int FormatTwoBit::dump(FILE *fp) {
+	return helper(fp, ACTION_DUMP, 0);
+}
+
 int FormatTwoBit::info(FILE *fp, int verbose) {
+	return helper(fp, ACTION_INFO, verbose);
+}
+
+int FormatTwoBit::show(FILE *fp) {
+	return helper(fp, ACTION_SHOW, 0);
+}
+
+int FormatTwoBit::helper(FILE *fp, int action, int verbose) {
 	char buf[256];
 
 	// Fixme: Read header size only
@@ -75,20 +93,34 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 
 			fread(index[i].nBlockStarts, sizeof(uint32_t), index[i].nBlockCount, fp);
 			fread(index[i].nBlockSizes,  sizeof(uint32_t), index[i].nBlockCount, fp);
+
 		} else {
 			index[i].nBlockStarts =
 			index[i].nBlockSizes = 0;
 		}
+
+		// Todo: Verify the blocks are in order
+		// Related, how are these used?
+
 		n = fread(&index[i].maskBlockCount,sizeof(uint32_t),1,fp);
 		if (verbose >= 2) {
 			printf(
-				"Seq #%3d: %6d kbase, block count %3d, mask %6d, \"%s\" \n",
+				"Seq #%3d: %6d kbase, blocks %3d, masks %6d, \"%s\" \n",
 				i,
 				index[i].dnaSize / 1000,
 				index[i].nBlockCount, index[i].maskBlockCount,
 				index[i].seq_hdr.name
 			);
 		}
+
+		if (verbose >= 3) {
+			for (unsigned o = 0; o < index[i].nBlockCount; o++) {
+				printf("   Block #%d: start: %d, size: %d\n",
+					o, index[i].nBlockStarts[o], index[i].nBlockSizes[o]
+				);
+			}
+		}
+
 		if (!index[i].maskBlockCount) {
 			index[i].maskBlockStarts = NULL;
 			index[i].maskBlockSizes = NULL;
@@ -118,6 +150,8 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 					);
 				}
 			}
+
+			// Todo: Walk the list of masks to ensure they are saved in alphabetical order
 		}
 
 		// Reserved
@@ -125,33 +159,47 @@ int FormatTwoBit::info(FILE *fp, int verbose) {
 		
 		/** Fixme: In some cases, we probably actually want to load this data. */
 		index[i].packedDna_offset = ftell(fp);
-		if (verbose < 9)
+		if (action == ACTION_INFO)
 			fseek(fp,(index[i].dnaSize+3)/4,SEEK_CUR);
 		else {
-			#if 0 // Work in progress
+			unsigned cur_block_i = 0;      // Note: Requires the block list to be in order
+			unsigned cur_mask_i = 0;       // Note: Requires the mask list to be in order
+			unsigned cur_bp_pos = 0;       // Current base pair position.
+			unsigned cur_print_width = 60; // Number of base pairs to print per line (for future show command)
 			char buf[8192];
 			int bpc = index[i].dnaSize;
 			int len = (index[i].dnaSize+3)/4;
 			while (len > 0) {
 				int toread = len > sizeof(buf) ? sizeof(buf) : len;
-				printf("ToRead :%d\n", toread);
+				int available = index[i].dnaSize;
+				// printf("ToRead :%d\n", toread);
 				n = fread(&buf[0], 1, toread, fp);
 				if (toread != n) {
 					printf("Error: Unable to read DNA data\n");
 					return -1;
 				}
 				for (unsigned i = 0; i < toread; i++) {
-					const char c[4] = { 'T', 'C', 'A', 'G' }; // 'G', 'A', 'C', 'T' };
-					printf("%c%c%c%c",
-						c[(buf[i] >> 6) & 3],
-						c[(buf[i] >> 4) & 3],
-						c[(buf[i] >> 2) & 3],
-						c[(buf[i] >> 0) & 3]
-					);
+					const char c[4] = { 'T', 'C', 'A', 'G' };
+					char ch = buf[i];
+					for (unsigned o = 0; o < 4; o++) {
+						if (available) {
+							if (action == ACTION_SHOW)
+								if (cur_bp_pos % cur_print_width == 0)
+									printf("\n%9d: ", cur_bp_pos);
+							// Fixme: Check blocks and masks as appropriate. And don't go over the end
+							//if (cur_bp_pos >= index[i].nBlockStarts[cur_block_i]) {
+							//	if (cur_bp_pos > index[i].nBlockStarts[cur_block_i]
+							//} else {
+								printf("%c", c[(ch >> 6) & 3]);
+							//}
+							ch <<= 2;
+							available--;
+							cur_bp_pos++;
+						}
+					}
 				}
 				len -= n;
 			}
-			#endif
 		}
 	}
 

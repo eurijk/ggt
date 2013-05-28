@@ -39,6 +39,11 @@ private:
 public:
 	int load();
 
+private:
+	static int helper(FILE *fp, int action, int verbose);
 
+public:
+	static int dump(FILE *fp);
 	static int info(FILE *fp, int verbose);
+	static int show(FILE *fp);
 };

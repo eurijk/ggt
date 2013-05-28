@@ -5,20 +5,48 @@
 
 #include "formats/format_twobit.h"
 
-int cmdHelp(int argc, char **argv);
-int cmdInfo(int argc, char **argv);
-int helpHelp();
-int helpInfo();
+class Input {
+private:
+	void _init() { filename = NULL; fp = NULL; seq = -1; verbose = 1; }
+public:
+	Input() { _init(); }
+
+	const char *cmd;
+	const char *filename;
+	FILE *fp;
+	int seq;
+	int verbose;
+} input;
+
+int cmdDump(int argc, char **argv); int helpDump();
+int cmdHelp(int argc, char **argv); int helpHelp();
+int cmdInfo(int argc, char **argv); int helpInfo();
+int cmdShow(int argc, char **argv); int helpShow();
 
 struct sCommands {
 	const char *cmd;
 	int (*fnCmd)(int argc, char **argv);
 	int (*fnHelp)();
 } commands[] = {
+	{ "dump", cmdDump, helpDump },
 	{ "help", cmdHelp, helpHelp },
-	{ "info", cmdInfo, helpInfo }
+	{ "info", cmdInfo, helpInfo },
+	{ "show", cmdShow, helpShow }
 };
 
+int usage() {
+	printf(
+		"Usage:\n"
+		"	ggt <command> [<args>]\n"
+		"Commands:\n"
+		"	dump   Display a dump of base pair information\n"
+		"	info   Information about a file (2bit)\n"
+		"	show   Dump base pair information with offsets\n"
+		"\n"
+		"See 'ggt help <command>' for more information about a specific command.\n"
+	);
+	return -1;
+}
 
 typedef enum {
 	FILE_FORMAT_UNKNOWN,
@@ -40,18 +68,38 @@ file_format_t determineFileFormat(FILE *fp) {
 	return FILE_FORMAT_UNKNOWN;
 }
 
-int usage() {
+int cmdDump(int argc, char **argv) {
+	for (int i = 2; i < argc; i++) {
+		if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
+			if (i + 1 >= argc) return usage();
+			input.seq = atol(argv[++i]);
+			continue;
+		}
+		input.filename = argv[i];
+		if (++i != argc)
+			return usage();
+	}
+	input.fp = fopen(input.filename, "r");
+	if (!input.fp) {
+		printf("Error, unable to open '%s'\n", input.filename);
+		return -1;
+	}
+	FormatTwoBit::dump(input.fp);
+	fclose(input.fp);
+	
+	return 0;
+}
+int helpDump() {
 	printf(
-		"Usage:\n"
-		"	ggt <command> [<args>]\n"
-		"Commands:\n"
-		"	info   Information about a file (2bit)\n"
-		"\n"
-		"See 'ggt help <command>' for more information about a specific command.\n"
+		"NAME\n"
+		"	ggt dump - Display a dump of base pair information\n"
+		"SYNOPSIS\n"
+		"	ggt dump <filename>\n"
+		"OPTIONS\n"
 	);
 	//	"Options:\n"
 	//	"	-s (sequence)  Sequence number\n"
-	return -1;
+	return 0;
 }
 
 int helpHelp() {
@@ -70,23 +118,45 @@ int cmdHelp(int argc, char **argv) {
 	return 0;
 }
 
-class Input {
-private:
-	void _init() { filename = NULL; fp = NULL; seq = -1; verbose = 1; }
-public:
-	Input() { _init(); }
+int cmdShow(int argc, char **argv) {
+	for (int i = 2; i < argc; i++) {
+		if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--seq")) {
+			if (i + 1 >= argc) return usage();
+			input.seq = atol(argv[++i]);
+			continue;
+		}
+		input.filename = argv[i];
+		if (++i != argc)
+			return usage();
+	}
+	input.fp = fopen(input.filename, "r");
+	if (!input.fp) {
+		printf("Error, unable to open '%s'\n", input.filename);
+		return -1;
+	}
+	FormatTwoBit::show(input.fp);
+	fclose(input.fp);
+	
+	return 0;
+}
+int helpShow() {
+	printf(
+		"NAME\n"
+		"	ggt show - Dump base pair information with offsets\n"
+		"SYNOPSIS\n"
+		"	ggt show <filename>\n"
+		"OPTIONS\n"
+	);
+	//	"Options:\n"
+	//	"	-s (sequence)  Sequence number\n"
+	return 0;
+}
 
-	const char *cmd;
-	const char *filename;
-	FILE *fp;
-	int seq;
-	int verbose;
-} input;
 
 int helpInfo() {
 	printf(
 		"NAME\n"
-		"	git info - Information about a file\n"
+		"	ggt info - Information about a file\n"
 		"SYNOPSIS\n"
 		"	ggt info [-v | -vv | -v(n) ] <filename>\n"
 		"OPTIONS\n"
