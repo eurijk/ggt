@@ -165,7 +165,7 @@ int FormatTwoBit::helper(FILE *fp, int action, int verbose) {
 			unsigned cur_block_i = 0;      // Note: Requires the block list to be in order
 			unsigned cur_mask_i = 0;       // Note: Requires the mask list to be in order
 			unsigned cur_bp_pos = 0;       // Current base pair position.
-			unsigned cur_print_width = 60; // Number of base pairs to print per line (for future show command)
+			unsigned cur_print_width = 50; // Number of base pairs to print per line (for future show command)
 			char buf[8192];
 			int bpc = index[i].dnaSize;
 			int len = (index[i].dnaSize+3)/4;
