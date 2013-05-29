@@ -178,20 +178,29 @@ int FormatTwoBit::helper(FILE *fp, int action, int verbose) {
 					printf("Error: Unable to read DNA data\n");
 					return -1;
 				}
-				for (unsigned i = 0; i < toread; i++) {
+				for (unsigned print_pos = 0; print_pos < toread; print_pos++) {
 					const char c[4] = { 'T', 'C', 'A', 'G' };
-					char ch = buf[i];
+					char ch = buf[print_pos];
 					for (unsigned o = 0; o < 4; o++) {
 						if (available) {
 							if (action == ACTION_SHOW)
 								if (cur_bp_pos % cur_print_width == 0)
 									printf("\n%9d: ", cur_bp_pos);
 							// Fixme: Check blocks and masks as appropriate. And don't go over the end
-							//if (cur_bp_pos >= index[i].nBlockStarts[cur_block_i]) {
-							//	if (cur_bp_pos > index[i].nBlockStarts[cur_block_i]
-							//} else {
+						test_again:
+							if (cur_block_i < index[i].nBlockCount) {
+								if (cur_bp_pos >= index[i].nBlockStarts[cur_block_i]) {
+									if (cur_bp_pos > index[i].nBlockStarts[cur_block_i] + index[i].nBlockSizes[cur_block_i]) {
+										cur_block_i++;
+										goto test_again;
+									}
+									printf("N");
+								} else {
+									printf("%c", c[(ch >> 6) & 3]);
+								}
+							} else {
 								printf("%c", c[(ch >> 6) & 3]);
-							//}
+							}
 							ch <<= 2;
 							available--;
 							cur_bp_pos++;
