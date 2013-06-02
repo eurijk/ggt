@@ -2,3 +2,14 @@ ggt
 ===
 
 Generic Genome Toolkit
+
+Usage:
+	ggt <command> [<args>]
+
+Commands:
+	dump   Display a dump of base pair information
+	info   Information about a file (2bit)
+	show   Dump base pair information with offsets
+
+Example:
+	./ggt dump -s 0 hg19.2bit > hg19_chr1.txt
