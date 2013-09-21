@@ -27,11 +27,12 @@ struct sCommands {
 	const char *cmd;
 	int (*fnCmd)(int argc, char **argv);
 	int (*fnHelp)();
+	const char *help;
 } commands[] = {
-	{ "dump", cmdDump, helpDump },
-	{ "help", cmdHelp, helpHelp },
-	{ "info", cmdInfo, helpInfo },
-	{ "show", cmdShow, helpShow }
+	{ "dump", cmdDump, helpDump, "Display a dump of base pair information" },
+	{ "help", cmdHelp, helpHelp, "Provides additional help about an option" },
+	{ "info", cmdInfo, helpInfo, "Information about a file" },
+	{ "show", cmdShow, helpShow, "Dump base pair information with offsets" }
 };
 
 int usage() {
@@ -39,9 +40,11 @@ int usage() {
 		"Usage:\n"
 		"	ggt <command> [<args>]\n"
 		"Commands:\n"
-		"	dump   Display a dump of base pair information\n"
-		"	info   Information about a file (2bit)\n"
-		"	show   Dump base pair information with offsets\n"
+	);
+	for (unsigned i = 0; i < sizeof(commands)/sizeof(struct sCommands); i++)
+		printf("	%-5s   %s\n", commands[i].cmd, commands[i].help);
+
+	printf(
 		"\n"
 		"See 'ggt help <command>' for more information about a specific command.\n"
 	);
